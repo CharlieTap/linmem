@@ -1,0 +1,20 @@
+[package]
+name = "linmem"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "linmem"
+crate-type = ["staticlib"]
+path = "src/lib.rs"
+
+[build-dependencies]
+
+cbindgen = "0.27"
+
+[dependencies]
+
+memmap2 = "0.9.5"
+concurrent-queue = "2.5.0"
+parking_lot = "0.12.3"
+dashmap = "6.1.0"
