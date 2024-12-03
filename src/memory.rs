@@ -49,7 +49,7 @@ impl LinearMemory {
         unsafe {
             self.memory
                 .remap(new_size, RemapOptions::new().may_move(true))
-                .is_ok();
+                .is_ok()
         }
     }
 
