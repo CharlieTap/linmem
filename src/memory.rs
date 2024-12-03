@@ -612,6 +612,7 @@ impl LinearMemory {
             mutex: Mutex::new(()),
         });
 
+        let mut guard = wait_entry.mutex.lock();
         let queue = self
             .wait_queues
             .entry(addr)
@@ -620,7 +621,6 @@ impl LinearMemory {
 
         queue.push(wait_entry.clone()).unwrap();
 
-        let mut guard = wait_entry.mutex.lock();
         let timed_out = if timeout_nanos >= 0 {
             let timeout = Duration::from_nanos(timeout_nanos as u64);
             let instant = Instant::now() + timeout;
