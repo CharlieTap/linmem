@@ -1,4 +1,4 @@
-name: Build Static liblinmem
+name: Build staticlibs for liblinmem
 
 on:
   workflow_dispatch:
