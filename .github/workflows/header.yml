@@ -1,0 +1,26 @@
+name: Build header for liblinmem
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate-header:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        run: rustup default stable
+
+      - name: Build and Run CLI to Create Header
+        run: |
+          cargo build --release
+          ./target/release/cli header ./liblinmem.h
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: liblinmem.h
+          path: ./liblinmem.h

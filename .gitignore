@@ -23,3 +23,5 @@ Cargo.lock
 # General
 .DS_Store
 .idea
+
+liblinmem.*
