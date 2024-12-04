@@ -3,6 +3,10 @@ name = "linmem"
 version = "0.1.0"
 edition = "2021"
 
+[profile.release]
+strip = true
+lto = true
+
 [[bin]]
 name = "cli"
 path = "src/bin.rs"

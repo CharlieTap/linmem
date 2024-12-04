@@ -45,5 +45,5 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rust-static-libs-${{ matrix.rust_target }}
+          name: liblinmem-${{ matrix.rust_target }}.a
           path: liblinmem/${{ matrix.rust_target }}
