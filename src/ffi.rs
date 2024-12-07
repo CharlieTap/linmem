@@ -28,16 +28,26 @@ pub unsafe extern "C" fn grow(ptr: *mut LinearMemory, pages: u32) -> bool {
 
 #[no_mangle]
 pub unsafe extern "C" fn copy(
-    ptr: *mut LinearMemory,
+    src_ptr: *const LinearMemory,
+    dest_ptr: *mut LinearMemory,
     src_offset: i32,
     dest_offset: i32,
     byte_count: i32,
 ) {
-    let memory = unsafe {
-        debug_assert!(!ptr.is_null(), "LinearMemory pointer is null");
-        &mut *ptr
+    let src_memory = unsafe {
+        debug_assert!(!src_ptr.is_null(), "Source LinearMemory pointer is null");
+        &*src_ptr
     };
-    memory.copy(src_offset, dest_offset, byte_count);
+
+    let dest_memory = unsafe {
+        debug_assert!(
+            !dest_ptr.is_null(),
+            "Destination LinearMemory pointer is null"
+        );
+        &mut *dest_ptr
+    };
+
+    src_memory.copy(src_offset, dest_memory, dest_offset, byte_count);
 }
 
 #[no_mangle]
