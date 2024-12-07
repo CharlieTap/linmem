@@ -69,6 +69,33 @@ impl LinearMemory {
         true
     }
 
+    pub fn copy(&mut self, src_offset: i32, dest_offset: i32, byte_count: i32) {
+        let src_ptr = self.memory.as_ptr().wrapping_add(src_offset as usize);
+        let dest_ptr = self.memory.as_mut_ptr().wrapping_add(dest_offset as usize);
+
+        debug_assert!(
+            (src_offset as usize) + (byte_count as usize) <= self.memory.len(),
+            "Source range exceeds memory bounds"
+        );
+        debug_assert!(
+            (dest_offset as usize) + (byte_count as usize) <= self.memory.len(),
+            "Destination range exceeds memory bounds"
+        );
+
+        unsafe {
+            std::ptr::copy(src_ptr, dest_ptr, byte_count as usize);
+        }
+    }
+
+    pub fn fill(&mut self, offset: i32, byte_count: i32, value: u8) {
+        let start = offset as usize;
+        let end = start + byte_count as usize;
+
+        debug_assert!(end <= self.memory.len(), "Fill range exceeds memory bounds");
+
+        self.memory[start..end].fill(value);
+    }
+
     pub fn read_i32(&self, address: i32) -> i32 {
         let pointer = address as usize;
         let bytes = &self.memory[pointer..pointer + 4];
@@ -710,6 +737,40 @@ mod tests {
 
         assert_eq!(memory.memory[initial_size], 0);
         assert_eq!(memory.memory[new_size - 1], 0);
+    }
+
+    #[test]
+    fn test_copy() {
+        let mut linear_memory = LinearMemory::new(1);
+
+        let src_offset = 0;
+        let dest_offset = 4;
+        let byte_count = 4;
+        linear_memory.memory[src_offset as usize..(src_offset + byte_count) as usize]
+            .copy_from_slice(&[1, 2, 3, 4]);
+
+        linear_memory.copy(src_offset, dest_offset, byte_count);
+
+        assert_eq!(
+            &linear_memory.memory[dest_offset as usize..(dest_offset + byte_count) as usize],
+            &[1, 2, 3, 4]
+        );
+    }
+
+    #[test]
+    fn test_fill() {
+        let mut linear_memory = LinearMemory::new(1);
+
+        let offset = 32;
+        let byte_count = 16;
+        let value = 0xFF;
+
+        linear_memory.fill(offset, byte_count, value);
+
+        assert_eq!(
+            &linear_memory.memory[offset as usize..(offset + byte_count) as usize],
+            &[value; 16]
+        );
     }
 
     #[test]
