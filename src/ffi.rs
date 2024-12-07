@@ -267,6 +267,41 @@ pub unsafe extern "C" fn write_f64(ptr: *mut LinearMemory, address: i32, value: 
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn read_bytes(
+    memory_ptr: *const LinearMemory,
+    address: i32,
+    byte_count: i32,
+) -> *const u8 {
+    let memory = unsafe {
+        debug_assert!(!memory_ptr.is_null(), "LinearMemory pointer is null");
+        &*memory_ptr
+    };
+
+    let slice = memory.read_bytes(address, byte_count as usize);
+    slice.as_ptr()
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn write_bytes(
+    memory_ptr: *mut LinearMemory,
+    address: i32,
+    bytearray: *const u8,
+    byte_count: i32,
+) {
+    let memory = unsafe {
+        debug_assert!(!memory_ptr.is_null(), "LinearMemory pointer is null");
+        &mut *memory_ptr
+    };
+
+    let bytearray = unsafe {
+        debug_assert!(!bytearray.is_null(), "Byte array pointer is null");
+        std::slice::from_raw_parts(bytearray, byte_count as usize)
+    };
+
+    memory.write_bytes(address, bytearray);
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn atomic_read_i32(ptr: *mut LinearMemory, address: i32) -> i32 {
     let memory = unsafe {
         debug_assert!(!ptr.is_null(), "LinearMemory pointer is null");

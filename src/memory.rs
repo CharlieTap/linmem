@@ -239,6 +239,27 @@ impl LinearMemory {
         self.memory[pointer..pointer + 8].copy_from_slice(&value.to_le_bytes());
     }
 
+    pub fn read_bytes(&self, address: i32, byte_count: usize) -> &[u8] {
+        let start = address as usize;
+        let end = start + byte_count;
+
+        debug_assert!(end <= self.memory.len(), "Read range exceeds memory bounds");
+
+        &self.memory[start..end]
+    }
+
+    pub fn write_bytes(&mut self, address: i32, bytearray: &[u8]) {
+        let start = address as usize;
+        let end = start + bytearray.len();
+
+        debug_assert!(
+            end <= self.memory.len(),
+            "The provided byte array exceeds the memory bounds"
+        );
+
+        self.memory[start..end].copy_from_slice(bytearray);
+    }
+
     pub fn atomic_read_i32(&self, address: i32) -> i32 {
         let aligned_ptr = self.memory[address as usize..].as_ptr() as *const AtomicI32;
         unsafe { (*aligned_ptr).load(Ordering::SeqCst) }
@@ -1008,6 +1029,34 @@ mod tests {
         memory.write_f64(address, value);
         let read_value = memory.read_f64(address);
         assert!(read_value.is_nan());
+    }
+
+    #[test]
+    fn test_read_bytes() {
+        let mut linear_memory = LinearMemory::new(1);
+
+        let test_data = [10, 20, 30, 40];
+        let address = 64;
+        linear_memory.write_bytes(address, &test_data);
+
+        let read_data = linear_memory.read_bytes(address, test_data.len());
+
+        assert_eq!(read_data, &test_data);
+    }
+
+    #[test]
+    fn test_write_bytes() {
+        let mut linear_memory = LinearMemory::new(1);
+
+        let bytearray = [1, 2, 3, 4, 5];
+        let address = 64;
+
+        linear_memory.write_bytes(address, &bytearray);
+
+        assert_eq!(
+            &linear_memory.memory[address as usize..(address as usize + bytearray.len())],
+            &bytearray
+        );
     }
 
     #[test]
