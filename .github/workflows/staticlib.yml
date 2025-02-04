@@ -38,7 +38,7 @@ jobs:
 
       - name: Build Static Library
         run: |
-          cargo build --release --target ${{ matrix.rust_target }}
+          cargo build -vv --release --target ${{ matrix.rust_target }}
           mkdir -p liblinmem/${{ matrix.rust_target }}
           mv target/${{ matrix.rust_target }}/release/liblinmem.a liblinmem/${{ matrix.rust_target }}/
 
