@@ -6,6 +6,8 @@ use memmap2::{MmapMut, MmapOptions};
 use memmap2::{MmapMut, MmapOptions, RemapOptions};
 use parking_lot::{Condvar, Mutex};
 use std::convert::TryInto;
+use std::simd::{cmp::SimdPartialEq, Simd};
+use std::slice;
 use std::sync::atomic::{
     AtomicI16, AtomicI32, AtomicI64, AtomicI8, AtomicU16, AtomicU32, AtomicU8, Ordering,
 };
@@ -13,6 +15,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 const PAGE_SIZE: u32 = 64 * 1024;
+const VECTOR_SIZE: usize = 16;
 
 type WaitQueue = Arc<ConcurrentQueue<Arc<WaitEntry>>>;
 
@@ -103,6 +106,38 @@ impl LinearMemory {
         debug_assert!(end <= self.memory.len(), "Fill range exceeds memory bounds");
 
         self.memory[start..end].fill(value);
+    }
+
+    pub fn find_null(&self, address: i32) -> i32 {
+        let mut offset: usize = address as usize;
+        let len: usize = self.memory.len();
+
+        while offset + VECTOR_SIZE <= len {
+            let chunk = unsafe {
+                let i8_slice = slice::from_raw_parts(
+                    self.memory.as_ptr().add(offset) as *const i8,
+                    VECTOR_SIZE,
+                );
+                Simd::<i8, VECTOR_SIZE>::from_slice(i8_slice)
+            };
+            let mask = chunk.simd_eq(Simd::splat(0));
+
+            if mask.any() {
+                let first_null: usize = mask.to_bitmask().trailing_zeros() as usize;
+                return (offset + first_null) as i32;
+            }
+
+            offset += VECTOR_SIZE;
+        }
+
+        while offset < len {
+            if self.memory[offset] == 0 {
+                return offset as i32;
+            }
+            offset += 1;
+        }
+
+        -1
     }
 
     pub fn read_i32(&self, address: i32) -> i32 {
@@ -803,6 +838,22 @@ mod tests {
             &linear_memory.memory[offset as usize..(offset + byte_count) as usize],
             &[value; 16]
         );
+    }
+
+    #[test]
+    fn test_find_null() {
+        let mut memory = LinearMemory::new(1);
+
+        let offset = 64;
+        let bytes = [1, 2, 3, 4, 5, 6, 7];
+        let null_byte = 0;
+
+        memory.memory[offset..offset + bytes.len()].copy_from_slice(&bytes);
+        memory.memory[offset + bytes.len()] = null_byte;
+
+        let null_offset = memory.find_null(offset as i32);
+
+        assert_eq!(null_offset, (offset + bytes.len()) as i32);
     }
 
     #[test]

@@ -60,6 +60,15 @@ pub unsafe extern "C" fn fill(ptr: *mut LinearMemory, offset: i32, byte_count: i
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn find_null(ptr: *mut LinearMemory, offset: i32) -> i32 {
+    let memory = unsafe {
+        debug_assert!(!ptr.is_null(), "LinearMemory pointer is null");
+        &mut *ptr
+    };
+    memory.find_null(offset)
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn read_i32(ptr: *mut LinearMemory, address: i32) -> i32 {
     let memory = unsafe {
         debug_assert!(!ptr.is_null(), "LinearMemory pointer is null");
