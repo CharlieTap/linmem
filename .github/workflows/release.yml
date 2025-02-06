@@ -1,0 +1,39 @@
+name: Build artifacts and attach to release
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+
+jobs:
+  header:
+    uses: ./.github/workflows/header.yml
+
+  staticlibs:
+    uses: ./.github/workflows/staticlib.yml
+
+  attach-artifacts:
+    runs-on: ubuntu-latest
+    needs:
+      - header
+      - staticlibs
+
+    steps:
+      - name: Download Static Library Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts/staticlibs
+
+      - name: Download Header Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: liblinmem.h
+          path: ./artifacts
+
+      - name: List Artifacts
+        run: ls -R ./artifacts
+
+      - name: Attach Artifacts to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./artifacts/**
