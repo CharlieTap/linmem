@@ -36,6 +36,4 @@ jobs:
       - name: Attach Artifacts to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            ./artifacts/staticlibs/*.zip
-            ./artifacts/liblinmem.h
+          files: ./artifacts/**
