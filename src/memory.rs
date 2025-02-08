@@ -1,3 +1,4 @@
+#![allow(clippy::missing_safety_doc)]
 use concurrent_queue::ConcurrentQueue;
 use dashmap::DashMap;
 #[cfg(not(target_os = "linux"))]
@@ -7,12 +8,12 @@ use memmap2::{MmapMut, MmapOptions, RemapOptions};
 use parking_lot::{Condvar, Mutex};
 use std::convert::TryInto;
 use std::simd::{cmp::SimdPartialEq, Simd};
-use std::slice;
 use std::sync::atomic::{
     AtomicI16, AtomicI32, AtomicI64, AtomicI8, AtomicU16, AtomicU32, AtomicU8, Ordering,
 };
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+use std::{ptr, slice};
 
 const PAGE_SIZE: u32 = 64 * 1024;
 const VECTOR_SIZE: usize = 16;
@@ -95,7 +96,7 @@ impl LinearMemory {
         );
 
         unsafe {
-            std::ptr::copy(src_ptr, dest_ptr, byte_count as usize);
+            ptr::copy(src_ptr, dest_ptr, byte_count as usize);
         }
     }
 
@@ -140,10 +141,9 @@ impl LinearMemory {
         -1
     }
 
-    pub fn read_i32(&self, address: i32) -> i32 {
-        let pointer = address as usize;
-        let bytes = &self.memory[pointer..pointer + 4];
-        i32::from_le_bytes(bytes.try_into().unwrap())
+    pub unsafe fn read_i32(&self, address: i32) -> i32 {
+        let pointer = self.memory.as_ptr().add(address as usize) as *const i32;
+        ptr::read_unaligned(pointer)
     }
 
     pub fn read_i32_from_i8(&self, address: i32) -> i32 {
@@ -865,7 +865,7 @@ mod tests {
 
         memory.write_i32(address, value);
 
-        let read_value = memory.read_i32(address);
+        let read_value = unsafe { memory.read_i32(address) };
         assert_eq!(value, read_value);
     }
 
@@ -1184,7 +1184,7 @@ mod tests {
 
         memory.atomic_write_i32(address, value);
 
-        let read_value = memory.read_i32(address);
+        let read_value = unsafe { memory.read_i32(address) };
         assert_eq!(value, read_value);
     }
 

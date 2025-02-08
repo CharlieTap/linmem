@@ -34,7 +34,7 @@ jobs:
               base_name=$(basename "$dir")
               cd "$dir"
               zip "../${base_name}.zip" "${base_name}"
-              rm "${base_name}"  # Remove the uncompressed file
+              rm "${base_name}"
               cd - > /dev/null
             fi
           done
