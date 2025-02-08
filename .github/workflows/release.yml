@@ -22,12 +22,6 @@ jobs:
       - name: Download Static Library Artifacts
         uses: actions/download-artifact@v4
         with:
-          path: ./artifacts/staticlibs
-
-      - name: Download Header Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: liblinmem.h
           path: ./artifacts
 
       - name: List Artifacts
@@ -35,11 +29,12 @@ jobs:
 
       - name: Compress Static Library Files
         run: |
-          for dir in ./artifacts/staticlibs/*; do
+          for dir in ./artifacts/*; do
             if [ -d "$dir" ]; then
               base_name=$(basename "$dir")
               cd "$dir"
               zip "../${base_name}.zip" "${base_name}"
+              rm "${base_name}"  # Remove the uncompressed file
               cd - > /dev/null
             fi
           done
