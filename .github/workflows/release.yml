@@ -1,4 +1,4 @@
-name: Collate and Attach Artifacts to Release
+name: Build artifacts and attach to release
 
 on:
   release:
