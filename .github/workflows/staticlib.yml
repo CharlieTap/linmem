@@ -48,5 +48,5 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: liblinmem-${{ matrix.rust_target }}.a.zip
+          name: liblinmem-${{ matrix.rust_target }}.a
           path: liblinmem/${{ matrix.rust_target }}
