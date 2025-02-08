@@ -33,6 +33,17 @@ jobs:
       - name: List Artifacts
         run: ls -R ./artifacts
 
+      - name: Compress Static Library Files
+        run: |
+          for dir in ./artifacts/staticlibs/*; do
+            if [ -d "$dir" ]; then
+              base_name=$(basename "$dir")
+              cd "$dir"
+              zip "../${base_name}.zip" "${base_name}"
+              cd - > /dev/null
+            fi
+          done
+
       - name: Attach Artifacts to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
