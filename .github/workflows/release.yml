@@ -30,12 +30,10 @@ jobs:
       - name: Compress Static Library Files
         run: |
           for dir in ./artifacts/*; do
-            if [ -d "$dir" ]; then
+            if [ -d "$dir" ] && [ -f "$dir/liblinmem.a" ]; then
               base_name=$(basename "$dir")
-              cd "$dir"
-              zip "../${base_name}.zip" "${base_name}"
-              rm "${base_name}"
-              cd - > /dev/null
+              zip -j "./artifacts/${base_name}.zip" "$dir/liblinmem.a"
+              rm -rf "$dir"
             fi
           done
 
