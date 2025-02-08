@@ -42,10 +42,9 @@ jobs:
       - name: Build Static Library
         run: |
           cargo build -vv --release --target ${{ matrix.rust_target }}
-          mv target/${{ matrix.rust_target }}/release/liblinmem.a liblinmem-${{ matrix.rust_target }}.a
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: liblinmem-${{ matrix.rust_target }}.a
-          path: liblinmem-${{ matrix.rust_target }}.a
+          path: target/${{ matrix.rust_target }}/release/liblinmem.a
