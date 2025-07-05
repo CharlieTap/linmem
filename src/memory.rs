@@ -2257,7 +2257,7 @@ mod tests {
         let barrier = Arc::new(Barrier::new(2));
 
         let timeout_seconds = 5_000_000_000;
-        let atomic_addr = 117;
+        let atomic_addr = 120;
         let expected_value = 42;
 
         if let Some(memory_mut) = Arc::get_mut(&mut memory) {
@@ -2289,7 +2289,7 @@ mod tests {
         let barrier = Arc::new(Barrier::new(2));
 
         let timeout_seconds = 5_000_000_000;
-        let atomic_addr = 117;
+        let atomic_addr = 120;
         let expected_value = 42;
 
         if let Some(memory_mut) = Arc::get_mut(&mut memory) {
