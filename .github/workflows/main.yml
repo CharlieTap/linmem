@@ -26,6 +26,9 @@ jobs:
       - name: Install Dependencies
         run: cargo fetch
 
+      - name: Install fmt and clippy
+        run: rustup component add rustfmt clippy
+
       - name: Check Code Formatting
         run: cargo fmt -- --check
 
