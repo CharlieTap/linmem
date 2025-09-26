@@ -15,7 +15,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use std::{ptr, slice};
 
-use crate::{make_readers, make_writers};
+use crate::{make_read_writers, make_readers, make_writers};
 
 const PAGE_SIZE: u32 = 64 * 1024;
 const VECTOR_SIZE: usize = 16;
@@ -143,46 +143,7 @@ impl LinearMemory {
         -1
     }
 
-    make_readers!(
-        (i32),
-        (i64),
-
-        (f32),
-        (f64),
-
-        (i32, i8),
-        (i32, i16),
-
-        (i32, u8),
-        (i32, u16),
-
-        (i64, i8),
-        (i64, i16),
-        (i64, i32),
-
-        (i64, u8),
-        (i64, u16),
-        (i64, u32),
-
-        (@atomic i32, AtomicI32),
-        (@atomic i64, AtomicI64),
-
-        (@atomic i32, AtomicI8, i8),
-        (@atomic i32, AtomicI16, i16),
-
-        (@atomic i32, AtomicU8, u8),
-        (@atomic i32, AtomicU16, u16),
-
-        (@atomic i64, AtomicI8, i8),
-        (@atomic i64, AtomicI16, i16),
-        (@atomic i64, AtomicI32, i32),
-
-        (@atomic i64, AtomicU8, u8),
-        (@atomic i64, AtomicU16, u16),
-        (@atomic i64, AtomicU32, u32),
-    );
-
-    make_writers!(
+    make_read_writers!(
         (i32),
         (i64),
 

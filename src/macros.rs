@@ -108,3 +108,13 @@ macro_rules! make_writers {
         }
     };
 }
+
+#[macro_export]
+macro_rules! make_read_writers {
+    ($($item:tt),* $(,)?) => {
+        $(
+            make_writers!(@single $item);
+            make_readers!(@single $item);
+        )*
+    };
+}
