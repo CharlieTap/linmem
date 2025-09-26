@@ -6,7 +6,7 @@ use memmap2::{MmapMut, MmapOptions};
 #[cfg(target_os = "linux")]
 use memmap2::{MmapMut, MmapOptions, RemapOptions};
 use parking_lot::{Condvar, Mutex};
-use std::convert::TryInto;
+use paste::paste;
 use std::simd::{cmp::SimdPartialEq, Simd};
 use std::sync::atomic::{
     AtomicI16, AtomicI32, AtomicI64, AtomicI8, AtomicU16, AtomicU32, AtomicU8, Ordering,
@@ -14,6 +14,8 @@ use std::sync::atomic::{
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use std::{ptr, slice};
+
+use crate::{make_readers, make_writers};
 
 const PAGE_SIZE: u32 = 64 * 1024;
 const VECTOR_SIZE: usize = 16;
@@ -141,138 +143,83 @@ impl LinearMemory {
         -1
     }
 
-    pub unsafe fn read_i32(&self, address: i32) -> i32 {
-        let pointer = self.memory.as_ptr().add(address as usize) as *const i32;
-        ptr::read_unaligned(pointer)
-    }
+    make_readers!(
+        (i32),
+        (i64),
 
-    pub fn read_i32_from_i8(&self, address: i32) -> i32 {
-        let pointer = address as usize;
-        let bytes = &self.memory[pointer..pointer + 1];
-        i8::from_le_bytes(bytes.try_into().unwrap()) as i32
-    }
+        (f32),
+        (f64),
 
-    pub fn read_i32_from_i16(&self, address: i32) -> i32 {
-        let pointer = address as usize;
-        let bytes = &self.memory[pointer..pointer + 2];
-        i16::from_le_bytes(bytes.try_into().unwrap()) as i32
-    }
+        (i32, i8),
+        (i32, i16),
 
-    pub fn read_i32_from_u8(&self, address: i32) -> i32 {
-        let pointer = address as usize;
-        let bytes = &self.memory[pointer..pointer + 1];
-        u8::from_le_bytes(bytes.try_into().unwrap()) as i32
-    }
+        (i32, u8),
+        (i32, u16),
 
-    pub fn read_i32_from_u16(&self, address: i32) -> i32 {
-        let pointer = address as usize;
-        let bytes = &self.memory[pointer..pointer + 2];
-        u16::from_le_bytes(bytes.try_into().unwrap()) as i32
-    }
+        (i64, i8),
+        (i64, i16),
+        (i64, i32),
 
-    pub fn write_i32(&mut self, address: i32, value: i32) {
-        let pointer = address as usize;
-        self.memory[pointer..pointer + 4].copy_from_slice(&value.to_le_bytes());
-    }
+        (i64, u8),
+        (i64, u16),
+        (i64, u32),
 
-    pub fn write_i32_to_i8(&mut self, address: i32, value: i32) {
-        let pointer = address as usize;
-        let bytes = (value as i8).to_le_bytes();
-        self.memory[pointer..pointer + 1].copy_from_slice(&bytes);
-    }
+        (@atomic i32, AtomicI32),
+        (@atomic i64, AtomicI64),
 
-    pub fn write_i32_to_i16(&mut self, address: i32, value: i32) {
-        let pointer = address as usize;
-        let bytes = (value as i16).to_le_bytes();
-        self.memory[pointer..pointer + 2].copy_from_slice(&bytes);
-    }
+        (@atomic i32, AtomicI8, i8),
+        (@atomic i32, AtomicI16, i16),
 
-    pub fn read_i64(&self, address: i32) -> i64 {
-        let pointer = address as usize;
-        let bytes = &self.memory[pointer..pointer + 8];
-        i64::from_le_bytes(bytes.try_into().unwrap())
-    }
+        (@atomic i32, AtomicU8, u8),
+        (@atomic i32, AtomicU16, u16),
 
-    pub fn read_i64_from_i8(&self, address: i32) -> i64 {
-        let pointer = address as usize;
-        let bytes = &self.memory[pointer..pointer + 1];
-        i8::from_le_bytes(bytes.try_into().unwrap()) as i64
-    }
+        (@atomic i64, AtomicI8, i8),
+        (@atomic i64, AtomicI16, i16),
+        (@atomic i64, AtomicI32, i32),
 
-    pub fn read_i64_from_i16(&self, address: i32) -> i64 {
-        let pointer = address as usize;
-        let bytes = &self.memory[pointer..pointer + 2];
-        i16::from_le_bytes(bytes.try_into().unwrap()) as i64
-    }
+        (@atomic i64, AtomicU8, u8),
+        (@atomic i64, AtomicU16, u16),
+        (@atomic i64, AtomicU32, u32),
+    );
 
-    pub fn read_i64_from_i32(&self, address: i32) -> i64 {
-        let pointer = address as usize;
-        let bytes = &self.memory[pointer..pointer + 4];
-        i32::from_le_bytes(bytes.try_into().unwrap()) as i64
-    }
+    make_writers!(
+        (i32),
+        (i64),
 
-    pub fn read_i64_from_u8(&self, address: i32) -> i64 {
-        let pointer = address as usize;
-        let bytes = &self.memory[pointer..pointer + 1];
-        u8::from_le_bytes(bytes.try_into().unwrap()) as i64
-    }
+        (f32),
+        (f64),
 
-    pub fn read_i64_from_u16(&self, address: i32) -> i64 {
-        let pointer = address as usize;
-        let bytes = &self.memory[pointer..pointer + 2];
-        u16::from_le_bytes(bytes.try_into().unwrap()) as i64
-    }
+        (i32, i8),
+        (i32, i16),
 
-    pub fn read_i64_from_u32(&self, address: i32) -> i64 {
-        let pointer = address as usize;
-        let bytes = &self.memory[pointer..pointer + 4];
-        u32::from_le_bytes(bytes.try_into().unwrap()) as i64
-    }
+        (i32, u8),
+        (i32, u16),
 
-    pub fn write_i64(&mut self, address: i32, value: i64) {
-        let pointer = address as usize;
-        self.memory[pointer..pointer + 8].copy_from_slice(&value.to_le_bytes());
-    }
+        (i64, i8),
+        (i64, i16),
+        (i64, i32),
 
-    pub fn write_i64_to_i8(&mut self, address: i32, value: i64) {
-        let pointer = address as usize;
-        let bytes = (value as i8).to_le_bytes();
-        self.memory[pointer..pointer + 1].copy_from_slice(&bytes);
-    }
+        (i64, u8),
+        (i64, u16),
+        (i64, u32),
 
-    pub fn write_i64_to_i16(&mut self, address: i32, value: i64) {
-        let pointer = address as usize;
-        let bytes = (value as i16).to_le_bytes();
-        self.memory[pointer..pointer + 2].copy_from_slice(&bytes);
-    }
+        (@atomic i32, AtomicI32),
+        (@atomic i64, AtomicI64),
 
-    pub fn write_i64_to_i32(&mut self, address: i32, value: i64) {
-        let pointer = address as usize;
-        let bytes = (value as i32).to_le_bytes();
-        self.memory[pointer..pointer + 4].copy_from_slice(&bytes);
-    }
+        (@atomic i32, AtomicI8, i8),
+        (@atomic i32, AtomicI16, i16),
 
-    pub fn read_f32(&self, address: i32) -> f32 {
-        let pointer = address as usize;
-        let bytes = &self.memory[pointer..pointer + 4];
-        f32::from_le_bytes(bytes.try_into().unwrap())
-    }
+        (@atomic i32, AtomicU8, u8),
+        (@atomic i32, AtomicU16, u16),
 
-    pub fn write_f32(&mut self, address: i32, value: f32) {
-        let pointer = address as usize;
-        self.memory[pointer..pointer + 4].copy_from_slice(&value.to_le_bytes());
-    }
+        (@atomic i64, AtomicI8, i8),
+        (@atomic i64, AtomicI16, i16),
+        (@atomic i64, AtomicI32, i32),
 
-    pub fn read_f64(&self, address: i32) -> f64 {
-        let pointer = address as usize;
-        let bytes = &self.memory[pointer..pointer + 8];
-        f64::from_le_bytes(bytes.try_into().unwrap())
-    }
-
-    pub fn write_f64(&mut self, address: i32, value: f64) {
-        let pointer = address as usize;
-        self.memory[pointer..pointer + 8].copy_from_slice(&value.to_le_bytes());
-    }
+        (@atomic i64, AtomicU8, u8),
+        (@atomic i64, AtomicU16, u16),
+        (@atomic i64, AtomicU32, u32),
+    );
 
     pub fn read_bytes(&self, address: i32, byte_count: usize) -> &[u8] {
         let start = address as usize;
@@ -293,101 +240,6 @@ impl LinearMemory {
         );
 
         self.memory[start..end].copy_from_slice(bytearray);
-    }
-
-    pub fn atomic_read_i32(&self, address: i32) -> i32 {
-        let aligned_ptr = self.memory[address as usize..].as_ptr() as *const AtomicI32;
-        unsafe { (*aligned_ptr).load(Ordering::SeqCst) }
-    }
-
-    pub fn atomic_read_i32_from_i8(&self, address: i32) -> i32 {
-        let aligned_ptr = self.memory[address as usize..].as_ptr() as *const AtomicI8;
-        unsafe { (*aligned_ptr).load(Ordering::SeqCst) as i32 }
-    }
-
-    pub fn atomic_read_i32_from_i16(&self, address: i32) -> i32 {
-        let aligned_ptr = self.memory[address as usize..].as_ptr() as *const AtomicI16;
-        unsafe { (*aligned_ptr).load(Ordering::SeqCst) as i32 }
-    }
-
-    pub fn atomic_read_i32_from_u8(&self, address: i32) -> i32 {
-        let aligned_ptr = self.memory[address as usize..].as_ptr() as *const AtomicU8;
-        unsafe { (*aligned_ptr).load(Ordering::SeqCst) as i32 }
-    }
-
-    pub fn atomic_read_i32_from_u16(&self, address: i32) -> i32 {
-        let aligned_ptr = self.memory[address as usize..].as_ptr() as *const AtomicU16;
-        unsafe { (*aligned_ptr).load(Ordering::SeqCst) as i32 }
-    }
-
-    pub fn atomic_write_i32(&mut self, address: i32, value: i32) {
-        let aligned_ptr = self.memory[address as usize..].as_mut_ptr() as *mut AtomicI32;
-        unsafe { (*aligned_ptr).store(value, Ordering::SeqCst) }
-    }
-
-    pub fn atomic_write_i32_to_i8(&mut self, address: i32, value: i32) {
-        let aligned_ptr = self.memory[address as usize..].as_mut_ptr() as *mut AtomicI8;
-        unsafe { (*aligned_ptr).store(value as i8, Ordering::SeqCst) }
-    }
-
-    pub fn atomic_write_i32_to_i16(&mut self, address: i32, value: i32) {
-        let aligned_ptr = self.memory[address as usize..].as_mut_ptr() as *mut AtomicI16;
-        unsafe { (*aligned_ptr).store(value as i16, Ordering::SeqCst) }
-    }
-
-    pub fn atomic_read_i64(&self, address: i32) -> i64 {
-        let aligned_ptr = self.memory[address as usize..].as_ptr() as *const AtomicI64;
-        unsafe { (*aligned_ptr).load(Ordering::SeqCst) }
-    }
-
-    pub fn atomic_read_i64_from_i8(&self, address: i32) -> i64 {
-        let aligned_ptr = self.memory[address as usize..].as_ptr() as *const AtomicI8;
-        unsafe { (*aligned_ptr).load(Ordering::SeqCst) as i64 }
-    }
-
-    pub fn atomic_read_i64_from_i16(&self, address: i32) -> i64 {
-        let aligned_ptr = self.memory[address as usize..].as_ptr() as *const AtomicI16;
-        unsafe { (*aligned_ptr).load(Ordering::SeqCst) as i64 }
-    }
-
-    pub fn atomic_read_i64_from_i32(&self, address: i32) -> i64 {
-        let aligned_ptr = self.memory[address as usize..].as_ptr() as *const AtomicI32;
-        unsafe { (*aligned_ptr).load(Ordering::SeqCst) as i64 }
-    }
-
-    pub fn atomic_read_i64_from_u8(&self, address: i32) -> i64 {
-        let aligned_ptr = self.memory[address as usize..].as_ptr() as *const AtomicU8;
-        unsafe { (*aligned_ptr).load(Ordering::SeqCst) as i64 }
-    }
-
-    pub fn atomic_read_i64_from_u16(&self, address: i32) -> i64 {
-        let aligned_ptr = self.memory[address as usize..].as_ptr() as *const AtomicU16;
-        unsafe { (*aligned_ptr).load(Ordering::SeqCst) as i64 }
-    }
-
-    pub fn atomic_read_i64_from_u32(&self, address: i32) -> i64 {
-        let aligned_ptr = self.memory[address as usize..].as_ptr() as *const AtomicU32;
-        unsafe { (*aligned_ptr).load(Ordering::SeqCst) as i64 }
-    }
-
-    pub fn atomic_write_i64(&mut self, address: i32, value: i64) {
-        let aligned_ptr = self.memory[address as usize..].as_mut_ptr() as *mut AtomicI64;
-        unsafe { (*aligned_ptr).store(value, Ordering::SeqCst) }
-    }
-
-    pub fn atomic_write_i64_to_i8(&mut self, address: i32, value: i64) {
-        let aligned_ptr = self.memory[address as usize..].as_mut_ptr() as *mut AtomicI8;
-        unsafe { (*aligned_ptr).store(value as i8, Ordering::SeqCst) }
-    }
-
-    pub fn atomic_write_i64_to_i16(&mut self, address: i32, value: i64) {
-        let aligned_ptr = self.memory[address as usize..].as_mut_ptr() as *mut AtomicI16;
-        unsafe { (*aligned_ptr).store(value as i16, Ordering::SeqCst) }
-    }
-
-    pub fn atomic_write_i64_to_i32(&mut self, address: i32, value: i64) {
-        let aligned_ptr = self.memory[address as usize..].as_mut_ptr() as *mut AtomicI32;
-        unsafe { (*aligned_ptr).store(value as i32, Ordering::SeqCst) }
     }
 
     pub fn atomic_rmw_add_i32(&self, address: i32, value: i32) -> i32 {
@@ -865,7 +717,7 @@ mod tests {
 
         memory.write_i32(address, value);
 
-        let read_value = unsafe { memory.read_i32(address) };
+        let read_value = memory.read_i32(address);
         assert_eq!(value, read_value);
     }
 
@@ -1177,20 +1029,20 @@ mod tests {
 
     #[test]
     fn test_atomic_write_i32() {
-        let mut memory = LinearMemory::new(1);
+        let memory = LinearMemory::new(1);
 
         let address: i32 = 4;
         let value: i32 = 117;
 
         memory.atomic_write_i32(address, value);
 
-        let read_value = unsafe { memory.read_i32(address) };
+        let read_value = memory.read_i32(address);
         assert_eq!(value, read_value);
     }
 
     #[test]
     fn test_atomic_write_i32_to_i8() {
-        let mut memory = LinearMemory::new(1);
+        let memory = LinearMemory::new(1);
 
         let address: i32 = 0;
         let value: i32 = -128;
@@ -1203,7 +1055,7 @@ mod tests {
 
     #[test]
     fn test_atomic_write_i32_to_i16() {
-        let mut memory = LinearMemory::new(1);
+        let memory = LinearMemory::new(1);
 
         let address: i32 = 2;
         let value: i32 = -32768;
@@ -1307,7 +1159,7 @@ mod tests {
 
     #[test]
     fn test_atomic_write_i64() {
-        let mut memory = LinearMemory::new(1);
+        let memory = LinearMemory::new(1);
 
         let address: i32 = 8;
         let value: i64 = 123456789101112;
@@ -1320,7 +1172,7 @@ mod tests {
 
     #[test]
     fn test_atomic_write_i64_to_i8() {
-        let mut memory = LinearMemory::new(1);
+        let memory = LinearMemory::new(1);
 
         let address: i32 = 0;
         let value: i64 = -128;
@@ -1333,7 +1185,7 @@ mod tests {
 
     #[test]
     fn test_atomic_write_i64_to_i16() {
-        let mut memory = LinearMemory::new(1);
+        let memory = LinearMemory::new(1);
 
         let address: i32 = 2;
         let value: i64 = -32768;
@@ -1346,7 +1198,7 @@ mod tests {
 
     #[test]
     fn test_atomic_write_i64_to_i32() {
-        let mut memory = LinearMemory::new(1);
+        let memory = LinearMemory::new(1);
 
         let address: i32 = 4;
         let value: i64 = -2147483648;
